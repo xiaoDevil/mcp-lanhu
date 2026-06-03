@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "lanhu": {
+      "command": "node",
+      "args": ["c:\\Users\\YXL\\Desktop\\MCP\\mcp-lanhu\\dist\\index.js"],
+      "env": {
+        "LANHU_COOKIE": "_ga=GA1.1.1664486448.1747815602; _bl_uid=njmFRjOe8LgbCU8v6eOj3w1u54k0; user_token=eyJhbGciOiJIUzI1NiIsImlhdCI6MTcwNjg3MTM4MCwiZXhwIjoxNzM4NDA3MzgwfQ.eyJpZCI6ImQwMzUxMGY1LTUyMzEtNDhiNS04MDQwLWQzMGVlOWI0YWMxMCJ9.jnUezlPZfEfJpAuxbrp7zZHLQ7ZDIKligmW2CEXn1vg; _ga_80BGNFFJQN=GS2.1.s1778317473$o28$g1$t1778318333$j60$l0$h0; aliyungf_tc=e1e57e67f4317d9f4261ab52ce2649e6469314ee4cc71ea9dd2f764503fdfc13; acw_tc=781bad1917797049764384207e00b1d34526a2b19e276701839df3b40cbe65; SERVERID=d1d445c508d7833458b75ffe46239380|1779705335|1779704976; session=.eJyNkEFuAzEIRe8y646EMdgmlxmBDUnUNo0mibqoevc6ygW6ROjrv_9-li12v52WQ-jHzd-W7TyWw1JZLAGk4RIEgmjMRbOqlCZWuTW3kr1XtUxSakgulqInNh89zSeqFyWTgF7donkQS3MZnHsMhc7UZ0Ea7MkzsSN6cRQNGpSWCXL1_VMvfrkvh_v-mGgfX8fzZesn7-_rgMwJglfGnFZqxmsDgnVkcBcj7QnmjsZYB5nhbE1CGkpsreCk5tK6btuWasEsUqmWOk9EIPeSzQNjdlAFLSXCkxkg-CS7fo8tzpej79f9_MRbCHJFcpDqnocPaVphrqyow5rZDN137f6Sm8UKdS6rUpaVErd16q1zU09PZzw9zsTj5vsr8K-xv39t5oGo.HPW3dw.wtqQA65bglUrLpXFjDO_xsarViU"
+      }
+    }
+  }
+}

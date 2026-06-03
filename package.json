@@ -1,0 +1,46 @@
+{
+  "name": "lanhu-mcp-server",
+  "version": "1.0.0",
+  "description": "蓝湖设计协作平台 MCP 服务器 - 支持 Axure 原型分析和 UI 设计图提取",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "lanhu-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "init": "tsx src/init.ts",
+    "test": "vitest run",
+    "test:mcp": "tsx src/test-mcp.ts",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "lanhu",
+    "axure",
+    "design",
+    "prototype",
+    "ai"
+  ],
+  "author": "devil <510357405@qq.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.0",
+    "playwright": "^1.40.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
