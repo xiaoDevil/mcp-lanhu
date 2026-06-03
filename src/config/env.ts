@@ -13,6 +13,8 @@ export interface Config {
   debug: boolean;
   imageMode: 'direct' | 'mcp_assisted' | 'text_only_images' | 'auto';
   imageMcpTool: string;
+  /** YApi 访问令牌（用于私有项目） */
+  yapiToken: string;
 }
 
 let _config: Config | null = null;
@@ -45,6 +47,7 @@ export function getConfig(): Config {
       ? process.env.IMAGE_MODE
       : 'auto') as Config['imageMode'],
     imageMcpTool: process.env.IMAGE_MCP_TOOL ?? 'mcp__zai-mcp-server__analyze_image',
+    yapiToken: process.env.YAPI_TOKEN ?? '',
   };
   return _config;
 }

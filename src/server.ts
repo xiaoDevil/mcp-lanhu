@@ -10,6 +10,7 @@ import { analyzePages, analyzePagesSchema } from './tools/analyze-pages.js';
 import { getDesigns, getDesignsSchema } from './tools/get-designs.js';
 import { analyzeDesigns, analyzeDesignsSchema } from './tools/analyze-designs.js';
 import { getDesignSlices, getDesignSlicesSchema } from './tools/get-design-slices.js';
+import { analyzeApiDoc, analyzeApiDocSchema } from './tools/analyze-api-doc.js';
 
 function formatToolError(toolName: string, err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
@@ -181,6 +182,30 @@ export function createServer(): McpServer {
         };
       } catch (err) {
         return { content: [{ type: 'text', text: formatToolError('lanhu_get_design_slices', err) }] };
+      }
+    }
+  );
+
+  // 8. API 接口文档分析
+  server.tool(
+    'lanhu_analyze_api_doc',
+    '[API Documentation] Analyze Swagger/OpenAPI or YApi documentation. Extracts all API endpoints with methods, parameters, request/response schemas. USE WHEN: API文档, 接口文档, Swagger, YApi, OpenAPI, 接口分析',
+    analyzeApiDocSchema,
+    async (args) => {
+      try {
+        const result = await analyzeApiDoc(
+          args as {
+            url: string;
+            doc_type: 'auto' | 'swagger' | 'yapi';
+            save_to_local: boolean;
+            include_type_defs: boolean;
+          }
+        );
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err) {
+        return { content: [{ type: 'text', text: formatToolError('lanhu_analyze_api_doc', err) }] };
       }
     }
   );
