@@ -11,6 +11,8 @@ import { getDesigns, getDesignsSchema } from './tools/get-designs.js';
 import { analyzeDesigns, analyzeDesignsSchema } from './tools/analyze-designs.js';
 import { getDesignSlices, getDesignSlicesSchema } from './tools/get-design-slices.js';
 import { analyzeApiDoc, analyzeApiDocSchema } from './tools/analyze-api-doc.js';
+import { comprehensiveAnalysis, comprehensiveAnalysisSchema } from './tools/comprehensive-analysis.js';
+import { downloadSlices, downloadSlicesSchema } from './tools/download-slices.js';
 
 function formatToolError(toolName: string, err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
@@ -206,6 +208,63 @@ export function createServer(): McpServer {
         };
       } catch (err) {
         return { content: [{ type: 'text', text: formatToolError('lanhu_analyze_api_doc', err) }] };
+      }
+    }
+  );
+
+  // 9. 综合需求分析
+  server.tool(
+    'lanhu_comprehensive_analysis',
+    '[Comprehensive Requirement Analysis] One-stop requirement analysis tool. ' +
+    'Accepts prototype URL + design URL + API doc URL (all optional), runs analyses in parallel, ' +
+    'collects icon/slice metadata for LLM to review, and generates a comprehensive requirement document. ' +
+    'USE WHEN: 综合分析, 需求分析, 一键分析, 全量分析, 完整需求, 需求+UI+接口',
+    comprehensiveAnalysisSchema,
+    async (args) => {
+      try {
+        const result = await comprehensiveAnalysis(
+          args as import('./types/comprehensive.js').ComprehensiveAnalysisArgs
+        );
+
+        const content = result.map((item) => {
+          if (typeof item === 'string') {
+            return { type: 'text' as const, text: item };
+          }
+          return {
+            type: 'image' as const,
+            data: item.data,
+            mimeType: item.mimeType,
+          };
+        });
+
+        return { content };
+      } catch (err) {
+        return { content: [{ type: 'text', text: formatToolError('lanhu_comprehensive_analysis', err) }] };
+      }
+    }
+  );
+
+  // 10. 下载切片（LLM 指定文件名）
+  server.tool(
+    'lanhu_download_slices',
+    '[Icon/Slice Download] Download design slices/icons with LLM-specified semantic filenames. ' +
+    'LLM analyzes UI designs first, then calls this tool with chosen filenames. ' +
+    'USE WHEN: 下载icon, 下载切片, 下载图标, download icons, 保存切图',
+    downloadSlicesSchema,
+    async (args) => {
+      try {
+        const result = await downloadSlices(
+          args as {
+            icons: Array<{ download_url: string; filename: string; svg_url?: string }>;
+            output_dir?: string;
+            prefer_svg?: boolean;
+          }
+        );
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err) {
+        return { content: [{ type: 'text', text: formatToolError('lanhu_download_slices', err) }] };
       }
     }
   );
