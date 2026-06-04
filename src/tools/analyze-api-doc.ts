@@ -4,7 +4,93 @@ import { fetchAndParseSwagger } from '../client/swagger-client.js';
 import { fetchAndParseYapi } from '../client/yapi-client.js';
 import { saveApiDocResult } from '../utils/api-doc-markdown.js';
 import { getConfig } from '../config/env.js';
-import type { ApiDocResult } from '../types/api-doc.js';
+import type { ApiDocResult, ApiEndpoint, ApiSchemaRef, ApiSchemaField, ApiTypeDef } from '../types/api-doc.js';
+
+/**
+ * 从 ApiSchemaRef 中递归收集所有 ref 引用的类型名
+ */
+function collectRefsFromSchema(schema: ApiSchemaRef | undefined, refs: Set<string>): void {
+  if (!schema) return;
+  if (schema.ref) refs.add(schema.ref);
+  // 递归 properties
+  if (schema.properties) {
+    for (const field of Object.values(schema.properties)) {
+      collectRefsFromField(field, refs);
+    }
+  }
+  // 递归 items（数组类型）
+  if (schema.items) {
+    collectRefsFromSchema(schema.items, refs);
+  }
+}
+
+/**
+ * 从 ApiSchemaField 中递归收集所有 ref 引用的类型名
+ */
+function collectRefsFromField(field: ApiSchemaField | undefined, refs: Set<string>): void {
+  if (!field) return;
+  if (field.ref) refs.add(field.ref);
+  if (field.properties) {
+    for (const f of Object.values(field.properties)) {
+      collectRefsFromField(f, refs);
+    }
+  }
+  if (field.items) {
+    collectRefsFromSchema(field.items, refs);
+  }
+}
+
+/**
+ * 从过滤后的接口列表中收集所有被引用的类型名
+ * 包括请求参数、请求体、响应体中的 ref，以及类型间的间接引用
+ */
+function collectReferencedTypeNames(
+  endpoints: ApiEndpoint[],
+  typeDefs: ApiTypeDef[],
+): Set<string> {
+  const refs = new Set<string>();
+
+  // 1. 从接口的 parameters / requestBody / responses 中收集直接引用
+  for (const ep of endpoints) {
+    for (const param of ep.parameters) {
+      // parameters 通常是基本类型，但如果有 properties/items 也递归
+      if ((param as unknown as ApiSchemaField).properties) {
+        for (const f of Object.values((param as unknown as ApiSchemaField).properties!)) {
+          collectRefsFromField(f, refs);
+        }
+      }
+    }
+    if (ep.requestBody?.schema) {
+      collectRefsFromSchema(ep.requestBody.schema, refs);
+    }
+    for (const resp of ep.responses) {
+      if (resp.schema) {
+        collectRefsFromSchema(resp.schema, refs);
+      }
+    }
+  }
+
+  // 2. 递归展开：如果类型 A 引用了类型 B，则 B 也应包含
+  const typeDefMap = new Map(typeDefs.map(td => [td.name, td]));
+  const toProcess = new Set(refs);
+  for (const name of toProcess) {
+    const td = typeDefMap.get(name);
+    if (td) {
+      const before = refs.size;
+      collectRefsFromSchema(td.schema, refs);
+      // 如果发现了新的 ref，继续处理
+      if (refs.size > before) {
+        for (const newName of refs) {
+          if (!toProcess.has(newName)) {
+            toProcess.add(newName);
+          }
+        }
+      }
+    }
+  }
+
+  return refs;
+}
 
 export const analyzeApiDocSchema = {
   url: z.string().describe(
@@ -61,9 +147,14 @@ export async function analyzeApiDoc(
     result.totalEndpoints = result.endpoints.length;
   }
 
-  // 4. 可选：移除类型定义
-  if (!include_type_defs) {
-    result.typeDefinitions = [];
+  // 4. 按接口过滤类型定义：只保留被过滤后接口引用的类型
+  if (result.typeDefinitions.length > 0) {
+    if (!include_type_defs) {
+      result.typeDefinitions = [];
+    } else if (result.endpoints.length > 0) {
+      const referencedNames = collectReferencedTypeNames(result.endpoints, result.typeDefinitions);
+      result.typeDefinitions = result.typeDefinitions.filter(td => referencedNames.has(td.name));
+    }
   }
 
   // 5. 可选：保存到本地

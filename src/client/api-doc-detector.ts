@@ -135,14 +135,35 @@ export async function detectApiDocType(
   }
 
   // 2. URL 模式匹配
-  for (const rule of RULES) {
-    for (const pattern of rule.urlPatterns) {
-      if (pattern.test(url)) {
-        const meta = rule.type === 'yapi' ? extractYapiMeta(url) : {};
-        if (endpointFilter) meta.endpoint_filter = endpointFilter;
-        return { type: rule.type, baseUrl: url, meta };
+  const matchedRule = RULES.find(rule => rule.urlPatterns.some(p => p.test(url)));
+  if (matchedRule) {
+    const meta = matchedRule.type === 'yapi' ? extractYapiMeta(url) : {};
+    if (endpointFilter) meta.endpoint_filter = endpointFilter;
+
+    // 如果 URL 是 Swagger UI / Knife4j 页面（doc.html 等），需要猜测实际 JSON 端点
+    const isUiPage = /doc\.html|swagger-ui|swagger\/index/i.test(url);
+    if (isUiPage) {
+      for (const candidate of guessSwaggerJsonUrls(url)) {
+        try {
+          const resp = await fetch(candidate, {
+            headers: { 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(8000),
+          });
+          if (!resp.ok) continue;
+          const text = await resp.text();
+          try {
+            const json = JSON.parse(text);
+            if (json.openapi || json.swagger) {
+              const type = json.openapi ? 'openapi_v3' : 'openapi_v2';
+              return { type, baseUrl: candidate, meta };
+            }
+          } catch { /* 非 JSON */ }
+        } catch { /* 忽略 */ }
       }
+      // 所有候选都失败，仍然返回原始 URL（后续解析会报错并给出提示）
     }
+
+    return { type: matchedRule.type, baseUrl: url, meta };
   }
 
   // 3. 内容探针：请求 URL 检查响应内容
